@@ -25,7 +25,6 @@ pub fn instantiate(
         owner: info.sender.clone(),
         cat_token_contract: deps.api.addr_validate(msg.cat_token_contract.as_str())?,
         genesis_timestamp: _env.block.time,
-        funds_wallet: deps.api.addr_validate(msg.funds_wallet.as_str())?,
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
@@ -97,10 +96,6 @@ pub fn mint_cat(deps: DepsMut, info: MessageInfo, env: Env) -> Result<Response, 
     }
 
     Ok(Response::new()
-        .add_message(BankMsg::Send {
-            to_address: state.funds_wallet.to_string(),
-            amount: vec![sent_coin.clone()],
-        })
         .add_message(WasmMsg::Execute {
             contract_addr: state.cat_token_contract.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::Mint {
@@ -137,7 +132,6 @@ mod tests {
 
         let msg = InstantiateMsg {
             cat_token_contract: "cat_token_contract".to_string(),
-            funds_wallet: "wallet".to_string(),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 
@@ -153,7 +147,6 @@ mod tests {
                 owner: Addr::unchecked("creator"),
                 cat_token_contract: Addr::unchecked("cat_token_contract"),
                 genesis_timestamp: env.block.time,
-                funds_wallet: Addr::unchecked("wallet")
             }
         )
     }
@@ -164,7 +157,6 @@ mod tests {
 
         let msg = InstantiateMsg {
             cat_token_contract: "cat_token_contract".to_string(),
-            funds_wallet: "wallet".to_string(),
         };
         let info = mock_info("creator", &[Coin::new(1000_u128, "uluna")]);
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -177,18 +169,14 @@ mod tests {
             .update(
                 deps.as_mut().storage,
                 |mut state| -> Result<_, ContractError> {
-                    state.genesis_timestamp = env.block.time.minus_seconds(1209612);
+                    state.genesis_timestamp = env.block.time.minus_seconds(1814200);
                     Ok(state)
                 },
             )
             .unwrap();
         let res = execute(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(res.messages.len(), 2);
-        assert_eq!(res.messages[0], SubMsg::new(BankMsg::Send {
-            to_address: "wallet".to_string(),
-            amount: vec![Coin::new(100000000_u128, "uluna".to_string())]
-        }));
-        assert_eq!(res.messages[1], SubMsg::new(WasmMsg::Execute {
+        assert_eq!(res.messages.len(), 1);
+        assert_eq!(res.messages[0], SubMsg::new(WasmMsg::Execute {
             contract_addr: "cat_token_contract".to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::Mint {
                 recipient: "anyone".to_string(),

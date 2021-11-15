@@ -10,7 +10,6 @@ pub struct State {
 
     pub cat_token_contract: Addr,
     pub genesis_timestamp: Timestamp,
-    pub funds_wallet: Addr,
 }
 
 pub const STATE: Item<State> = Item::new("state");
