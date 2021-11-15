@@ -1,0 +1,1 @@
+9f1fcef04d8dc7544264158ccafe1457e45dfb3d2cd8780d7c08f64c47a04036  ./target/wasm32-unknown-unknown/release/cat_mint.wasm
